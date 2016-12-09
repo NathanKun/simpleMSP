@@ -224,8 +224,25 @@ void initPorts() {
 	P3OUT = 0x00;
 }
 
-uint16_t analogRead(const inch input_channel) {
+/*void analogReadInit() {
+ // init to 0
+ ADC10CTL0 = ADC10CTL1 = 0;
 
+ // SREF_0: reference Vcc GND
+ // ADC10SHT_0: 4 x ADC10CLKs
+ // REF2_5V: reference-generator voltage 2,5 Volts
+ // REFON: Reference generator on
+ // ADC10ON: ADC10 on
+ ADC10CTL0 = SREF_0 + ADC10SHT_0 + REF2_5V + REFON + ADC10ON;
+
+ // ADC10DIV_0: ADC10 clock divider = 1
+ // ADC10SSEL_2: ADC10 clock source select MCLK, 1MHz
+ // SHS_0: Sample-and-hold source select = ADC10SC bit
+ // CONSEQ_0: Conversion sequence mode select = Single-channel-single-conversion
+ ADC10CTL1 = ADC10DIV_0 + ADC10SSEL_2 + SHS_0 + CONSEQ_0;
+ }*/
+
+uint16_t analogRead(const inch input_channel) {
 	// init to 0
 	ADC10CTL0 = ADC10CTL1 = 0;
 
@@ -243,57 +260,82 @@ uint16_t analogRead(const inch input_channel) {
 	ADC10CTL1 = ADC10DIV_0 + ADC10SSEL_2 + SHS_0 + CONSEQ_0;
 
 	// input channel select
-	ADC10CTL1 = (input_channel * 0x1000);
+	ADC10CTL1 = (input_channel * 0x1000) + ADC10DIV_0 + ADC10SSEL_2 + SHS_0
+			+ CONSEQ_0;
+	;
 	ADC10CTL0 |= ENC + ADC10SC;     // Sampling and conversion start
 
-	while (ADC10CTL1 & ADC10BUSY);	// Tant que ADC occupé on attend
+	while (ADC10CTL1 & ADC10BUSY)
+		;	// Tant que ADC occupé on attend
 	ADC10CTL0 &= ~ENC;		// Conversion finie alors Disable ADC conversion
 
 	return ADC10MEM;	        // Return Conversion value
-
 }
 
 void timer_init() {
-    BCSCTL1 = CALBC1_1MHZ;
-    DCOCTL = CALDCO_1MHZ;
+	BCSCTL1 = CALBC1_1MHZ;
+	DCOCTL = CALDCO_1MHZ;
 }
 
-void timer_create (timer timer, uint32_t microsecond, timer_mode_control mode_control) {
+void timer_create(timer timer, uint32_t microsecond,
+		timer_mode_control mode_control) {
 	// for sure
 	TA0CTL = 0;
 	TA0CCR0 = 0;
-    TA0R = 0;
+	TA0R = 0;
 	TA0CTL &= ~TAIFG; // reset flag
 
 	uint16_t ccr = 0;
 	uint8_t divise_by = 1;
 
-	if(microsecond > 0 && microsecond <= 65535) {
+	if (microsecond > 0 && microsecond <= 65535) {
 		ccr = microsecond;
 		divise_by = ID_0;
-	} else if(microsecond > 65535 && microsecond <= 131070) {
+	} else if (microsecond > 65535 && microsecond <= 131070) {
 		ccr = microsecond / 2;
 		divise_by = ID_1;
-	} else if(microsecond > 131070 && microsecond <= 262140) {
+	} else if (microsecond > 131070 && microsecond <= 262140) {
 		ccr = microsecond / 4;
 		divise_by = ID_2;
-	} else if(microsecond > 262140 && microsecond <= 524280) {
+	} else if (microsecond > 262140 && microsecond <= 524280) {
 		ccr = microsecond / 8;
 		divise_by = ID_3;
 	}
 
-    TA0CCR0 = ccr;
-    TA0CTL = mode_control | TASSEL_2 | divise_by; // use SMCLK
-    TA0CTL |= TAIE; // enable timer interruption
+	TA0CCR0 = ccr;
+	TA0CTL = mode_control | TASSEL_2 | divise_by; // use SMCLK
+	TA0CTL |= TAIE; // enable timer interruption
 
 }
 
-void timer_delete (timer timer) {
-    TA0CTL &= ~TAIE; // disable timer interruption
+void timer_delete(timer timer) {
+	TA0CTL &= ~TAIE; // disable timer interruption
 	TA0CTL &= ~MC_3; // halt timer
 	TA0CTL |= TACLR; // Timer_A clear
 	// for sure
-    TA0R = 0;
+	TA0R = 0;
 	TA0CCR0 = 0;
 	TA0CTL = 0;
+}
+
+void reverseOutput(const uint8_t pin) {
+	uint16_t bit = pinToBit(pin);
+	if (isPort1Pin(pin)) {
+		P1OUT ^= bit;
+	} else if (isPort2Pin(pin)) {
+		P2OUT ^= bit;
+	}
+}
+
+void clearFlag(const uint8_t pin) {
+	uint16_t bit = pinToBit(pin);
+	if (isPort1Pin(pin)) {
+		P1IFG &= ~bit;
+	} else if (isPort2Pin(pin)) {
+		P2IFG &= ~bit;
+	} else if (pin == TIMER0) {
+		TA0CTL &= ~TAIFG;
+	} else if (pin == TIMER1) {
+		TA1CTL &= ~TAIFG;
+	}
 }

@@ -1,7 +1,7 @@
 ******************************************************************************
                   MSP430 Linker PC v16.9.0                     
 ******************************************************************************
->> Linked Thu Dec 08 23:07:27 2016
+>> Linked Fri Dec 09 21:25:11 2016
 
 OUTPUT FILE NAME:   <simpleMSP.out>
 ENTRY POINT SYMBOL: "_c_int00_noinit_noargs_noexit"  address: 0000c01a

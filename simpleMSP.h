@@ -41,7 +41,8 @@
 //typedef enum { P10, P11, P12, P13, P14, P15, P16, P17 } port1Pins;
 //typedef enum { P20, P21, P22, P23, P24, P25, P26, P27 } port2Pins;
 
-typedef enum { false = 0, true = 1 } bool;
+typedef enum {
+false = 0, true = 1}bool;
 
 /*
  * 0000 A0
@@ -58,18 +59,26 @@ typedef enum { false = 0, true = 1 } bool;
  * 1011 (VCC – VSS) / 2
  * */
 typedef enum {
-	A0 = 0, A1 = 1, A2 = 2, A3 = 3,
-	A4 = 4, A5 = 5, A6 = 6, A7 = 7,
-	VeREFp = 8,
-	VREFnByVeREFn = 9,
-	Temperature_sensor = 10,
-	HalfOfVCCMinusVSS = 11
+A0 = 0,
+A1 = 1,
+A2 = 2,
+A3 = 3,
+A4 = 4,
+A5 = 5,
+A6 = 6,
+A7 = 7,
+VeREFp = 8,
+VREFnByVeREFn = 9,
+Temperature_sensor = 10,
+HalfOfVCCMinusVSS = 11
 } inch;
 
 /**
  * timer emum
  */
-typedef enum { TIMER0 = 0, TIMER1 = 1 } timer;
+typedef enum {
+TIMER0 = 0, TIMER1 = 1
+} timer;
 
 /*
  * Mode control for timerA
@@ -77,9 +86,9 @@ typedef enum { TIMER0 = 0, TIMER1 = 1 } timer;
  * 01 Up mode: the timer counts up to TACCR0.
  * 10 Continuous mode: the timer counts up to 0FFFFh.
  * 11 Up/down mode: the timer counts up to TACCR0 then down to 0000h.
-*/
+ */
 typedef enum {
-	STOP_MODE = MC_0, UP_MODE = MC_1, CONTINUOUS_MODE = MC_2, UP_DOWN_MODE = MC_3
+STOP_MODE = MC_0, UP_MODE = MC_1, CONTINUOUS_MODE = MC_2, UP_DOWN_MODE = MC_3
 } timer_mode_control;
 
 extern const uint8_t port1Pins[];
@@ -90,10 +99,9 @@ extern const uint8_t port2Pins[];
  *
  * \param pin the pin's name
  *
- * \value INPUT or OUTPUT
+ * \param dir INPUT or OUTPUT
  */
 void directionPin(const uint8_t pin, const uint8_t dir);
-
 
 /**
  * write a digital signal to a pin
@@ -104,7 +112,6 @@ void directionPin(const uint8_t pin, const uint8_t dir);
  */
 void digitalWrite(const uint8_t pin, const uint8_t value);
 
-
 /**
  * read a digital signal from a pin
  *
@@ -113,7 +120,6 @@ void digitalWrite(const uint8_t pin, const uint8_t value);
  * \return HIGH or LOW
  */
 int digitalRead(const uint8_t pin);
-
 
 /**
  * select function mode for a pin
@@ -124,7 +130,6 @@ int digitalRead(const uint8_t pin);
  */
 void selectPin(const uint8_t pin, const uint8_t mode);
 
-
 /**
  * set pull-up for a pin
  *
@@ -132,8 +137,7 @@ void selectPin(const uint8_t pin, const uint8_t mode);
  *
  * \param enable ENABLE or DISABLE
  */
-void pullupPin (const uint8_t pin, const uint8_t enable);
-
+void pullupPin(const uint8_t pin, const uint8_t enable);
 
 /**
  * set interrupt for a pin
@@ -146,18 +150,20 @@ void pullupPin (const uint8_t pin, const uint8_t enable);
  */
 void interruptPin(const uint8_t pin, const uint8_t enable, ...);
 
-
 /**
  * enable button S2
  */
 void enableS2();
-
 
 /**
  * Initialize all ports to output mode and turn off output.
  */
 void initPorts();
 
+/**
+ * initialization for analog read
+ */
+//void analogReadInit();
 
 /**
  * read analog signal
@@ -175,12 +181,10 @@ void initPorts();
  */
 uint16_t analogRead(const inch input_channel);
 
-
 /**
  * initialization timer, set 1MHZ
  */
 void timer_init();
-
 
 /**
  * create a SMCLK timer and start counting
@@ -191,15 +195,29 @@ void timer_init();
  *
  * \param mode_control STOP_MODE, UP_MODE, CONTINUOUS_MODE, UP_DOWN_MODE
  */
-void timer_create (timer timer, uint32_t microsecond, timer_mode_control mode_control);
-
+void timer_create(timer timer, uint32_t microsecond,
+	timer_mode_control mode_control);
 
 /**
  * stop and delete a timer
  *
  * \param timer TIMER0 or TIMER1
  */
-void timer_delete (timer timer);
+void timer_delete(timer timer);
+
+/**
+ * reverse the output of a pin, 1 to 0 or 0 to 1
+ *
+ * \param pin the pin's name
+ */
+void reverseOutput(const uint8_t pin);
+
+/**
+ * clear flag of interruption for a pin or a timer
+ *
+ * \param pin the pin's name, or TIMER0, or TIMER1
+ */
+void clearFlag(const uint8_t pin);
 
 #endif // SIMPLEMSP_H_
 
