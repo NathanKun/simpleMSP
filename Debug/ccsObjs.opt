@@ -1,1 +1,0 @@
-"./Afficheur.obj" "./main.obj" "./simpleMSP.obj" "../lnk_msp430g2553.cmd" -llibc.a 
