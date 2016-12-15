@@ -1,11 +1,13 @@
 #include <msp430.h> 
 #include "simpleMSP.h"
+#include "Afficheur.h"
 /*
  * main.c
  */
 void main(void) {
 	WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
 	initPorts();
+	Aff_Init();
 
 	/*
 	interruptPin(P10, ENABLE);
@@ -41,7 +43,7 @@ void main(void) {
 	enableS2();
 	directionPin(P10, OUTPUT);
 	*/
-
+	int time = 0;
 	while (1) {
 		/*
 		if (digitalRead(P13) == HIGH) {
@@ -51,6 +53,8 @@ void main(void) {
 			digitalWrite(P10, HIGH);
 			digitalWrite(P16, LOW);
 		}*/
-
+		Aff_valeur(time);
+		time++;
+		__delay_cycles(1000000);
 	}
 }
