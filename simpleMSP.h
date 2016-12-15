@@ -58,8 +58,7 @@ false = 0, true = 1}bool;
  * 1010 Temperature sensor
  * 1011 (VCC – VSS) / 2
  * */
-typedef enum {
-A0 = 0,
+typedef enum {A0 = 0,
 A1 = 1,
 A2 = 2,
 A3 = 3,
@@ -90,6 +89,32 @@ TIMER0 = 0, TIMER1 = 1
 typedef enum {
 STOP_MODE = MC_0, UP_MODE = MC_1, CONTINUOUS_MODE = MC_2, UP_DOWN_MODE = MC_3
 } timer_mode_control;
+
+/**
+ * Output mode for timerA
+ *
+ * OUTMODx bits 7-5
+ *
+ * Output modes 2, 3, 6 and 7 are not useful for TACCR0 beacause EQUx=EQU0
+ *
+ * 000 OUT bit value
+ * 001 Set
+ * 010 Toggle/reset
+ * 011 Set/reset
+ * 100 Toggle
+ * 101 Reset
+ * 110 Toggle/set
+ * 111 Reset/set
+ */
+typedef enum {
+SET = OUTMOD_1,
+TOGGLE_RESET = OUTMOD_2,
+SET_RESET = OUTMOD_3,
+TOGGLE = OUTMOD_4,
+RESET = OUTMOD_5,
+TOGGLE_SET = OUTMOD_6,
+RESET_SET = OUTMOD_7
+} timer_output_mode;
 
 extern const uint8_t port1Pins[];
 extern const uint8_t port2Pins[];
@@ -164,7 +189,6 @@ void initPorts();
  * initialization for analog read
  */
 //void analogReadInit();
-
 /**
  * read analog signal
  *
@@ -182,6 +206,11 @@ void initPorts();
 uint16_t analogRead(const inch input_channel);
 
 /**
+ * write pwm
+ */
+void analogWrite(timer timer, uint16_t ccr0_microsecond, uint16_t ccr1_microsecond);
+
+/**
  * initialization timer, set 1MHZ
  */
 void timer_init();
@@ -191,12 +220,12 @@ void timer_init();
  *
  * \param timer TIMER0 or TIMER1
  *
- * \param microsecond ccr in microsecond
+ * \param microsecond ccr in microsecond,from 0 to 524280
  *
  * \param mode_control STOP_MODE, UP_MODE, CONTINUOUS_MODE, UP_DOWN_MODE
  */
 void timer_create(timer timer, uint32_t microsecond,
-	timer_mode_control mode_control);
+	timer_mode_control mode_control, uint8_t interrupt_enable);
 
 /**
  * stop and delete a timer

@@ -11,6 +11,8 @@
 
 const uint8_t port1Pins[] = { P10, P11, P12, P13, P14, P15, P16, P17 };
 const uint8_t port2Pins[] = { P20, P21, P22, P23, P24, P25, P26, P27 };
+const uint8_t pwm0Pins[] = { P11, P12, P15, P16, P26 };
+const uint8_t pwm1Pins[] = { P20, P21, P22, P23, P24, P25 };
 
 bool isPort1Pin(const uint8_t pin) {
 	// in c 0 is false, any not 0 is true, so if(isPort1Pin) works
@@ -22,6 +24,24 @@ bool isPort1Pin(const uint8_t pin) {
 bool isPort2Pin(const uint8_t pin) {
 	if (pin >= P20 && pin <= P27)
 		return true;
+	return false;
+}
+
+bool isPwm0Pin(const uint8_t pin) {
+	int i = 0;
+	for (i = 0; i < 5; i++) {
+		if (pin == pwm0Pins[i])
+			return true;
+	}
+	return false;
+}
+
+bool isPwm1Pin(const uint8_t pin) {
+	int i = 0;
+	for (i = 0; i < 6; i++) {
+		if (pin == pwm1Pins[i])
+			return true;
+	}
 	return false;
 }
 
@@ -189,22 +209,24 @@ void interruptPin(const uint8_t pin, const uint8_t enable, ...) {
 	uint16_t bit = pinToBit(pin);
 	if (isPort1Pin(pin)) {
 		if (is_enable == true) {
-			P1IE |= bit;
 			if (edge == RISING_EDGE)
 				P1IES |= bit;
 			else if (edge == FALLING_EDGE)
 				P1IES &= ~bit;
+			P1IE |= bit;
 		} else
 			P1IE &= ~bit;
+		P1IFG &= ~bit;
 	} else if (isPort2Pin(pin)) {
 		if (is_enable == true) {
-			P2IE |= bit;
 			if (edge == RISING_EDGE)
 				P2IES |= bit;
 			else if (edge == FALLING_EDGE)
 				P2IES &= ~bit;
+			P2IE |= bit;
 		} else
 			P2IE &= ~bit;
+		P2IFG &= ~bit;
 	}
 }
 
@@ -272,19 +294,60 @@ uint16_t analogRead(const inch input_channel) {
 	return ADC10MEM;	        // Return Conversion value
 }
 
+void analogWrite(timer timer, uint16_t ccr0_microsecond,
+		uint16_t ccr1_microsecond) {
+
+	uint16_t ccr0 = 0;
+	uint16_t ccr1 = 0;
+	uint8_t divise_by = 1;
+
+	if (ccr0_microsecond > 0 && ccr0_microsecond <= 65535) {
+		ccr0 = ccr0_microsecond;
+		ccr1 = ccr1_microsecond;
+		divise_by = ID_0;
+	} else if (ccr0_microsecond > 65535 && ccr0_microsecond <= 131070) {
+		ccr0 = ccr0_microsecond / 2;
+		ccr1 = ccr1_microsecond / 2;
+		divise_by = ID_1;
+	} else if (ccr0_microsecond > 131070 && ccr0_microsecond <= 262140) {
+		ccr0 = ccr0_microsecond / 4;
+		ccr1 = ccr1_microsecond / 4;
+		divise_by = ID_2;
+	} else if (ccr0_microsecond > 262140 && ccr0_microsecond <= 524280) {
+		ccr0 = ccr0_microsecond / 8;
+		ccr1 = ccr1_microsecond / 8;
+		divise_by = ID_3;
+	}
+	if (timer == TIMER0) {
+		// for sure
+		TA0CTL = 0;
+		TA0CCR0 = 0;
+		TA0R = 0;
+		TA0CTL &= ~TAIFG; // reset flag
+		TA0CTL = UP_MODE | TASSEL_2 | divise_by; // use SMCLK
+		TA0CCTL1 |= OUTMOD_7;
+		TA0CCR0 = ccr0;
+		TA0CCR1 = ccr1;
+	} else {
+		TA1CTL = 0;
+		TA1CCR0 = 0;
+		TA1R = 0;
+		TA1CTL &= ~TAIFG;
+		TA1CTL = UP_MODE | TASSEL_2 | divise_by; // use SMCLK
+		TA1CCTL1 |= OUTMOD_7;
+		TA1CCR0 = ccr0;
+		TA1CCR1 = ccr1;
+	}
+
+}
+
 void timer_init() {
 	BCSCTL1 = CALBC1_1MHZ;
 	DCOCTL = CALDCO_1MHZ;
 }
 
 void timer_create(timer timer, uint32_t microsecond,
-		timer_mode_control mode_control) {
-	// for sure
-	TA0CTL = 0;
-	TA0CCR0 = 0;
-	TA0R = 0;
-	TA0CTL &= ~TAIFG; // reset flag
-
+		timer_mode_control mode_control, uint8_t interrupt_enable) {
 	uint16_t ccr = 0;
 	uint8_t divise_by = 1;
 
@@ -302,20 +365,60 @@ void timer_create(timer timer, uint32_t microsecond,
 		divise_by = ID_3;
 	}
 
-	TA0CCR0 = ccr;
-	TA0CTL = mode_control | TASSEL_2 | divise_by; // use SMCLK
-	TA0CTL |= TAIE; // enable timer interruption
+	if (timer == TIMER0) {
+		// for sure
+		TA0CTL = 0;
+		TA0CCR0 = 0;
+		TA0R = 0;
+		TA0CTL &= ~TAIFG; // reset flag
+		TA0CCR0 = ccr;
+		TA0CTL = mode_control | TASSEL_2 | divise_by; // use SMCLK
+
+		if (interrupt_enable == ENABLE)
+			TA0CTL |= TAIE; // enable timer interruption
+	} else if (timer == TIMER1){
+		TA1CTL = 0;
+		TA1CCR0 = 0;
+		TA1R = 0;
+		TA1CTL &= ~TAIFG;
+		TA1CCR0 = ccr;
+		TA1CTL = mode_control | TASSEL_2 | divise_by; // use SMCLK
+
+		if (interrupt_enable == ENABLE)
+			TA1CTL |= TAIE; // enable timer interruption
+	}
 
 }
 
 void timer_delete(timer timer) {
-	TA0CTL &= ~TAIE; // disable timer interruption
-	TA0CTL &= ~MC_3; // halt timer
-	TA0CTL |= TACLR; // Timer_A clear
-	// for sure
-	TA0R = 0;
-	TA0CCR0 = 0;
-	TA0CTL = 0;
+	if (timer == TIMER0) {
+		TA0CTL &= ~TAIE; // disable timer interruption
+		TA0CTL &= ~MC_3; // halt timer
+		TA0CTL |= TACLR; // Timer_A clear
+		// for sure
+		TA0R = 0;
+		TA0CCR0 = 0;
+		TA0CCR1 = 0;
+		TA0CCR2 = 0;
+		TA0CTL = 0;
+		TA0CCTL0 = 0;
+		TA0CCTL1 = 0;
+		TA0CCTL2 = 0;
+	} else if (timer == TIMER1){
+		TA1CTL &= ~TAIE; // disable timer interruption
+		TA1CTL &= ~MC_3; // halt timer
+		TA1CTL |= TACLR; // Timer_A clear
+		// for sure
+		TA1R = 0;
+		TA1CCR0 = 0;
+		TA1CCR1 = 0;
+		TA1CCR2 = 0;
+		TA1CTL = 0;
+		TA1CCTL0 = 0;
+		TA1CCTL1 = 0;
+		TA1CCTL2 = 0;
+	}
+
 }
 
 void reverseOutput(const uint8_t pin) {
