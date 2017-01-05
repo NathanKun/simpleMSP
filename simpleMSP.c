@@ -4,10 +4,8 @@
  *  Created on: 6 dec. 2016
  *      Author: Junyang HE
  */
-#include <MSP430G2553.h>
-#include <stdint.h>
-#include <stdarg.h>
 #include "simpleMSP.h"
+#include <stdarg.h>
 
 const uint8_t port1Pins[] = { P10, P11, P12, P13, P14, P15, P16, P17 };
 const uint8_t port2Pins[] = { P20, P21, P22, P23, P24, P25, P26, P27 };

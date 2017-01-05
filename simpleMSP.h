@@ -5,8 +5,10 @@
  *      Author: Junyang HE
  */
 #ifndef SIMPLEMSP_H_   /* Include guard */
-#include <stdint.h>
 #define SIMPLEMSP_H_
+
+#include <msp430G2553.h>
+#include <stdint.h>
 
 #define HIGH 1
 #define LOW 0
@@ -58,18 +60,19 @@ false = 0, true = 1}bool;
  * 1010 Temperature sensor
  * 1011 (VCC – VSS) / 2
  * */
-typedef enum {A0 = 0,
-A1 = 1,
-A2 = 2,
-A3 = 3,
-A4 = 4,
-A5 = 5,
-A6 = 6,
-A7 = 7,
-VeREFp = 8,
-VREFnByVeREFn = 9,
-Temperature_sensor = 10,
-HalfOfVCCMinusVSS = 11
+typedef enum {
+	A0 = 0, /* P10 */
+	A1 = 1, /* P11 */
+	A2 = 2, /* P12 */
+	A3 = 3, /* P13 */
+	A4 = 4, /* P14 */
+	A5 = 5, /* P15 */
+	A6 = 6, /* P16 */
+	A7 = 7, /* P17 */
+	VeREFp = 8,
+	VREFnByVeREFn = 9,
+	Temperature_sensor = 10,
+	HalfOfVCCMinusVSS = 11
 } inch;
 
 /**
@@ -208,7 +211,8 @@ uint16_t analogRead(const inch input_channel);
 /**
  * write pwm
  */
-void analogWrite(timer timer, uint16_t ccr0_microsecond, uint16_t ccr1_microsecond);
+void analogWrite(timer timer, uint16_t ccr0_microsecond,
+	uint16_t ccr1_microsecond);
 
 /**
  * initialization timer, set 1MHZ
